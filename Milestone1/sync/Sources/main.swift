@@ -31,6 +31,7 @@ var pt: pthread_t?
 var s: Int32
 
 s = pthread_create(&pt, nil, repeatFunc, pointer)
+sleep(20)
 
 if (s != 0) {
   print("some Error")
