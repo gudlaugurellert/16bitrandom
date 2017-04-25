@@ -14,43 +14,45 @@ struct InputStruct {
   var inputBuffer: String = ""
 }
 
+func errorHandler(no: Int32, msg: String) {
+  errno = no
+  perror("Error in: \(msg) | Code: \(errno)")
+  exit(EXIT_FAILURE)
+}
+
 func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
   
-  var printing = input.assumingMemoryBound(to: String.self).pointee
+  let printing = input.assumingMemoryBound(to: String.self).pointee
 
-  print("1 start repeatFunc")
   print(printing)
   
-  print("2 end of repatFunc ")
   return nil
 }
 
 let pointer : UnsafeMutableRawPointer? = nil
 var pt: pthread_t?
-var s: Int32
 
-var testingStruct = InputStruct()
+var setInputBuffer = InputStruct()
 
 if let stdin = readLine() {
   
-  testingStruct.inputBuffer = stdin
-  
+  setInputBuffer.inputBuffer = stdin
 }
 
-print("test:::  \(testingStruct.inputBuffer)")
-s = pthread_create(&pt, nil, repeatFunc, &testingStruct.inputBuffer)
-
+var s: Int32 = pthread_create(&pt, nil, repeatFunc, &setInputBuffer.inputBuffer)
 
 if (s != 0) {
-  print("some Error")
+  errorHandler(no: s, msg: "thread_create")
 } else {
-  print("it ran??")
+  //print("pthread_create ran successfully") /* For Debugging */
 }
 
+var status: Int32 = pthread_join(pt!, nil)
 
+if (status != 0) {
+  errorHandler(no: s, msg: "pthread_join")
+} else {
+  //print("pthread_join ran successfully") /* For Debugging */
+}
 
-//guard pthread_create(&pt, nil, repeatFunc, pointer) == 0 && pt != nil
-//  else { throw Error
-//  
-//}
 
