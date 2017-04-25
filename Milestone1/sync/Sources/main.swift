@@ -10,28 +10,36 @@
 
 import Foundation
 
-func repeatFunc(_: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
-  
-  print("1 start repeatFunc")
-  
-  if let inputBuffer = readLine() {
-    
-    print("2 start readline")
-    
-    print(inputBuffer)
-  }
-  
-  print("1x end of repatFunc ")
-  return nil
+struct InputStruct {
+  var inputBuffer: String = ""
 }
 
+func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
+  
+  var printing = input.assumingMemoryBound(to: String.self).pointee
+
+  print("1 start repeatFunc")
+  print(printing)
+  
+  print("2 end of repatFunc ")
+  return nil
+}
 
 let pointer : UnsafeMutableRawPointer? = nil
 var pt: pthread_t?
 var s: Int32
 
-s = pthread_create(&pt, nil, repeatFunc, pointer)
-sleep(20)
+var testingStruct = InputStruct()
+
+if let stdin = readLine() {
+  
+  testingStruct.inputBuffer = stdin
+  
+}
+
+print("test:::  \(testingStruct.inputBuffer)")
+s = pthread_create(&pt, nil, repeatFunc, &testingStruct.inputBuffer)
+
 
 if (s != 0) {
   print("some Error")
@@ -45,16 +53,4 @@ if (s != 0) {
 //  else { throw Error
 //  
 //}
-
-//pthread = pt!
-
-//
-
-
-//var pthread: pthread_t
-//pthread_create(&pthread, nil, { (UnsafeMutableRawPointer) in
-//  print("pthread ran")
-//  
-//  return nil
-//}, nil)
 
