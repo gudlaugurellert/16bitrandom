@@ -11,7 +11,12 @@
 import Foundation
 
 struct InputStruct {
+  
   var inputBuffer: String = ""
+  var test: String = "what the shit"
+  var m1 = pthread_mutex_t()
+  var m2 = pthread_mutex_t()
+
 }
 
 func errorHandler(no: Int32, msg: String) {
@@ -21,25 +26,38 @@ func errorHandler(no: Int32, msg: String) {
 }
 
 func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
+  //pthread_mutex_lock(&input.m2)
   
-  let printing = input.assumingMemoryBound(to: String.self).pointee
+//  let x = input.test.assumingMemoryBound(to: String.self).pointee
+// WHY WONT DOING X WORK
+  
+  let printing = input.assumingMemoryBound(to: InputStruct.self).pointee.test
 
   print(printing)
+  //print(x)
   
   return nil
 }
 
+var setInputBuffer = InputStruct()
+
 let pointer : UnsafeMutableRawPointer? = nil
 var pt: pthread_t?
+pthread_mutex_init(&setInputBuffer.m1, nil)
+pthread_mutex_init(&setInputBuffer.m2, nil)
 
-var setInputBuffer = InputStruct()
+//pthread_mutex_lock(&m1)
+//var s: Int32 = pthread_create(&pt, nil, repeatFunc, &setInputBuffer.inputBuffer)
 
 if let stdin = readLine() {
   
   setInputBuffer.inputBuffer = stdin
 }
 
-var s: Int32 = pthread_create(&pt, nil, repeatFunc, &setInputBuffer.inputBuffer)
+
+var s: Int32 = pthread_create(&pt, nil, repeatFunc, &setInputBuffer)
+sleep(10)
+
 
 if (s != 0) {
   errorHandler(no: s, msg: "thread_create")
