@@ -10,15 +10,20 @@
 
 import Foundation
 
+// Struct that I will pass into the thread I create
 struct InputStruct {
   
+  // The stdin
   var inputBuffer: String = ""
-  var test: String = "what the shit"
+  
+  // Mutexes I need
   var m1 = pthread_mutex_t()
   var m2 = pthread_mutex_t()
+  var m3 = pthread_mutex_t()
 
 }
 
+// Function that handles my error checking
 func errorHandler(no: Int32, msg: String) {
   errno = no
   perror("Error in: \(msg) | Code: \(errno)")
@@ -26,45 +31,65 @@ func errorHandler(no: Int32, msg: String) {
 }
 
 func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
-  //pthread_mutex_lock(&input.m2)
+  pthread_mutex_lock(&setInputBuffer.m2)
   
-//  let x = input.test.assumingMemoryBound(to: String.self).pointee
-// WHY WONT DOING X WORK
   
-  let printing = input.assumingMemoryBound(to: InputStruct.self).pointee.test
+  // Printing out the input from stdin stored in my struct
+  let printing = input.assumingMemoryBound(to: InputStruct.self).pointee.inputBuffer
+  
+  
+  // Pseudocode !!
+  /*
+  print("press enter to quit: ")
+  
+   while readline() != enter {
+    print("that was not enter ph00l, try again")
+   }
+   pthread_mutex_unlock(&setInputBuffer.m2)
+  
+   */
 
   print(printing)
-  //print(x)
-  
+  pthread_mutex_unlock(&setInputBuffer.m1)
   return nil
 }
 
 var setInputBuffer = InputStruct()
 
-let pointer : UnsafeMutableRawPointer? = nil
-var pt: pthread_t?
+// Initializing mutexes - I reckon I need three...
 pthread_mutex_init(&setInputBuffer.m1, nil)
 pthread_mutex_init(&setInputBuffer.m2, nil)
+pthread_mutex_init(&setInputBuffer.m3, nil)
 
-//pthread_mutex_lock(&m1)
-//var s: Int32 = pthread_create(&pt, nil, repeatFunc, &setInputBuffer.inputBuffer)
+let pointer : UnsafeMutableRawPointer? = nil
 
+var pt: pthread_t?
+
+// Reading in the input
 if let stdin = readLine() {
   
   setInputBuffer.inputBuffer = stdin
 }
 
 
+pthread_mutex_lock(&setInputBuffer.m1)
+// Creating a new thread, passing in the address of the struct
 var s: Int32 = pthread_create(&pt, nil, repeatFunc, &setInputBuffer)
-sleep(10)
 
 
+// Destroy the mutexes to clear up resources
+pthread_mutex_destroy(&setInputBuffer.m1)
+pthread_mutex_destroy(&setInputBuffer.m2)
+pthread_mutex_destroy(&setInputBuffer.m3)
+
+// Checking the return of pthread_create and pass it to my error handler func
 if (s != 0) {
   errorHandler(no: s, msg: "thread_create")
 } else {
   //print("pthread_create ran successfully") /* For Debugging */
 }
 
+// Joining the threads
 var status: Int32 = pthread_join(pt!, nil)
 
 if (status != 0) {
