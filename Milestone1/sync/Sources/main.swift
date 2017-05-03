@@ -51,6 +51,8 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
 
   print(printing)
   pthread_mutex_unlock(&setInputBuffer.m1)
+  print("Child thread exiting")
+  pthread_mutex_unlock(&setInputBuffer.m2)
   return nil
 }
 
@@ -75,7 +77,7 @@ if let stdin = readLine() {
 pthread_mutex_lock(&setInputBuffer.m1)
 // Creating a new thread, passing in the address of the struct
 var s: Int32 = pthread_create(&pt, nil, repeatFunc, &setInputBuffer)
-
+print("child thread is gone")
 
 // Destroy the mutexes to clear up resources
 pthread_mutex_destroy(&setInputBuffer.m1)
