@@ -13,14 +13,21 @@ import Foundation
 // Struct that I will pass into the thread I create
 struct InputStruct {
   
-  // The stdin
-  var inputBuffer: String = ""
+  var inputBuffer: UnsafeMutablePointer<String>
+  var lock1: UnsafeMutablePointer<pthread_mutex_t>
+  var lock2: UnsafeMutablePointer<pthread_mutex_t>
+  var lock3: UnsafeMutablePointer<pthread_mutex_t>
   
-  // Mutexes I need
-  var m1 = pthread_mutex_t()
-  var m2 = pthread_mutex_t()
-  var m3 = pthread_mutex_t()
-
+  init(_ mutex1: UnsafeMutablePointer<pthread_mutex_t>,
+       _ mutex2: UnsafeMutablePointer<pthread_mutex_t>,
+       _ mutex3: UnsafeMutablePointer<pthread_mutex_t>,
+       _ textInput: UnsafeMutablePointer<String>) {
+    
+    self.lock1 = mutex1
+    self.lock2 = mutex2
+    self.lock3 = mutex3
+    self.inputBuffer = textInput
+  }
 }
 
 // Function that handles my error checking
@@ -31,58 +38,71 @@ func errorHandler(no: Int32, msg: String) {
 }
 
 func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
-  pthread_mutex_lock(&setInputBuffer.m2)
+  print("entering child thread/func") /* For Debugging */
   
+  let temp = input
+  typealias StructP = UnsafeMutablePointer<InputStruct>
+  let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
+
+  pthread_mutex_lock(sp.pointee.lock3)
+  pthread_mutex_lock(sp.pointee.lock1)
   
   // Printing out the input from stdin stored in my struct
-  let printing = input.assumingMemoryBound(to: InputStruct.self).pointee.inputBuffer
+  print(sp.pointee.inputBuffer.pointee)
   
-  
-  // Pseudocode !!
-  /*
-  print("press enter to quit: ")
-  
-   while readline() != enter {
-    print("that was not enter ph00l, try again")
-   }
-   pthread_mutex_unlock(&setInputBuffer.m2)
-  
-   */
+  pthread_mutex_unlock(sp.pointee.lock3)
+  pthread_mutex_lock(sp.pointee.lock2)
 
-  print(printing)
-  pthread_mutex_unlock(&setInputBuffer.m1)
-  print("Child thread exiting")
-  pthread_mutex_unlock(&setInputBuffer.m2)
+  print("Exiting repeatFunc") /* For Debugging */
+  
   return nil
 }
 
-var setInputBuffer = InputStruct()
+// Create mutexes
+var lock1 = pthread_mutex_t()
+var lock2 = pthread_mutex_t()
+var lock3 = pthread_mutex_t()
+var attr = pthread_mutexattr_t()
+// Initializing mutexes
+pthread_mutex_init(&lock1, &attr)
+pthread_mutex_init(&lock2, &attr)
+pthread_mutex_init(&lock3, &attr)
 
-// Initializing mutexes - I reckon I need three...
-pthread_mutex_init(&setInputBuffer.m1, nil)
-pthread_mutex_init(&setInputBuffer.m2, nil)
-pthread_mutex_init(&setInputBuffer.m3, nil)
+// Locking first mutex for main thread
+pthread_mutex_lock(&lock1)
 
-let pointer : UnsafeMutableRawPointer? = nil
+var inputBuffer: String = ""
 
+// Constructing my struct stored values
+var structArgs: InputStruct = InputStruct(&lock1, &lock2, &lock3, &inputBuffer)
+
+//let pointer : UnsafeMutableRawPointer? = nil
 var pt: pthread_t?
+
+// Creating a new thread, passing in the address of the struct
+print("create new child thread") /* For Debugging */
+var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
 
 // Reading in the input
 if let stdin = readLine() {
-  
-  setInputBuffer.inputBuffer = stdin
+  print("first input readline") /* For Debugging */
+  inputBuffer = stdin
 }
 
+pthread_mutex_unlock(&lock2)
+pthread_mutex_lock(&lock3)
+pthread_mutex_lock(&lock2)
 
-pthread_mutex_lock(&setInputBuffer.m1)
-// Creating a new thread, passing in the address of the struct
-var s: Int32 = pthread_create(&pt, nil, repeatFunc, &setInputBuffer)
-print("child thread is gone")
+print("Press Enter to Quit: ")
 
-// Destroy the mutexes to clear up resources
-pthread_mutex_destroy(&setInputBuffer.m1)
-pthread_mutex_destroy(&setInputBuffer.m2)
-pthread_mutex_destroy(&setInputBuffer.m3)
+if let stdin = readLine() {
+  print("second input readline") /* For Debugging */
+  pthread_mutex_unlock(&lock2)
+  pthread_mutex_unlock(&lock3)
+}
+print("Child exiting") /* For Debugging */
+// Joining the threads
+var status: Int32 = pthread_join(pt!, nil)
 
 // Checking the return of pthread_create and pass it to my error handler func
 if (s != 0) {
@@ -91,8 +111,6 @@ if (s != 0) {
   //print("pthread_create ran successfully") /* For Debugging */
 }
 
-// Joining the threads
-var status: Int32 = pthread_join(pt!, nil)
 
 if (status != 0) {
   errorHandler(no: s, msg: "pthread_join")
@@ -100,4 +118,7 @@ if (status != 0) {
   //print("pthread_join ran successfully") /* For Debugging */
 }
 
-
+// Destroy the mutexes to clear up resources
+pthread_mutex_destroy(&lock1)
+pthread_mutex_destroy(&lock2)
+pthread_mutex_destroy(&lock3)
