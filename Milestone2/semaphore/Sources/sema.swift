@@ -37,6 +37,7 @@ public class Sema {
   
   public func procure(c: pthread_cond_t, m: pthread_mutex_t) {
     // start critical
+    lock(&m)
     
     while(c <= 0) {
       pthread_cond_wait(&c, &m)
@@ -45,17 +46,22 @@ public class Sema {
     // Decrement by one
     c -= 1
     
-    // end critical ?
+    // end critical
+    unlock(&m)
   }
   
   public func vacate(c: pthread_cond_t, m: pthread_mutex_t) {
     // start critical?
+    lock(m)
     
     // Increment by one
     c += 1
     
-    lock.signal(c)
+    // signal vacate
+    signal(c)
     
+    // end critical
+    unlock(m)
   }
   
   //procure(Semaphore *semaphore)

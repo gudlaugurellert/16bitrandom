@@ -4,7 +4,7 @@
 # Milestone 1 Makefile
 # sync
 
-c=sync
+c=semaphore
 space=" "
 
 bsuc="<><> Build Success <><>"
