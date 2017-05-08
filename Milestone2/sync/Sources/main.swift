@@ -5,7 +5,7 @@
  Trimester 1, 2017
  3420ICT Systems Programming
  Assignment 2
- Milestone 1 - sync
+ Milestone 2 - semaphores
  */
 
 import Foundation
