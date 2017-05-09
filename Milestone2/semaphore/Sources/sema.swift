@@ -7,6 +7,7 @@
  Assignment 2
  Milestone 2 - semaphores
  */
+
 import Foundation
 
 class SemaModule {
@@ -35,7 +36,6 @@ class SemaModule {
 extension SemaModule {
   
   func procure() {
-    
     // Start critical
     pthread_mutex_lock(&lockProcure)
     
@@ -52,7 +52,6 @@ extension SemaModule {
   }
 
   func vacate() {
-    
     // Start critical
     pthread_mutex_lock(&lockVacate)
     
@@ -66,9 +65,3 @@ extension SemaModule {
     pthread_mutex_unlock(&lockVacate)
   }
 }
-
-//  func destroy( m: UnsafeMutablePointer<pthread_mutex_t>,
-//                c: UnsafeMutablePointer<pthread_cond_t>) {
-//    pthread_mutex_destroy(&m)
-//    pthread_cond_destroy(&c)
-//  }

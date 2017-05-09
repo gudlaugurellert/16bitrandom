@@ -13,28 +13,15 @@ import Foundation
 // Struct that I will pass into the thread I create
 struct InputStruct {
   
-//  var mainLock_1: UnsafeMutablePointer<pthread_mutex_t>
-//  var childLock_2: UnsafeMutablePointer<pthread_mutex_t>
-//  var enterLock_3: UnsafeMutablePointer<pthread_mutex_t>
-  
-//  var sem1: SemaModule = SemaModule(value: 1)
-//  var sem2: SemaModule = SemaModule(value: 1)
-  
   var sem1: UnsafeMutablePointer<SemaModule>
   var sem2: UnsafeMutablePointer<SemaModule>
   
   var inputBuffer: UnsafeMutablePointer<String>
   
-  init(/*_ mutex1: UnsafeMutablePointer<pthread_mutex_t>,
-       _ mutex2: UnsafeMutablePointer<pthread_mutex_t>,
-       _ mutex3: UnsafeMutablePointer<pthread_mutex_t>,*/
-        _ semaphore1: UnsafeMutablePointer<SemaModule>,
+  init( _ semaphore1: UnsafeMutablePointer<SemaModule>,
         _ semaphore2: UnsafeMutablePointer<SemaModule>,
         _ textInput: UnsafeMutablePointer<String>) {
-    
-//    self.mainLock_1 = mutex1
-//    self.childLock_2 = mutex2
-//    self.enterLock_3 = mutex3
+
     self.sem1 = semaphore1
     self.sem2 = semaphore2
     self.inputBuffer = textInput
@@ -55,13 +42,23 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
   typealias StructP = UnsafeMutablePointer<InputStruct>
   let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
   
+  sp.pointee.sem2.pointee.procure()
+  
 //  pthread_mutex_lock(sp.pointee.childLock_2)
 //  pthread_mutex_lock(sp.pointee.mainLock_1)
   
   // print("printing input:") /* For Debugging */
+  
   // Printing out the input from stdin stored in my struct
   print(sp.pointee.inputBuffer.pointee)
   
+  sp.pointee.sem1.pointee.vacate()
+  sp.pointee.sem2.pointee.procure()
+  
+  sp.pointee.sem1.pointee.vacate()
+  sp.pointee.sem2.pointee.procure()
+  sp.pointee.sem1.pointee.vacate()
+
 //  pthread_mutex_unlock(sp.pointee.childLock_2)
 //  pthread_mutex_lock(sp.pointee.enterLock_3)
 //  
@@ -73,23 +70,6 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
   
   return nil
 }
-
-
-//// Create mutexes
-//var mainLock_1 = pthread_mutex_t()
-//var childLock_2 = pthread_mutex_t()
-//var enterLock_3 = pthread_mutex_t()
-//
-//// Create attributes
-//var attr1 = pthread_mutexattr_t()
-//var attr2 = pthread_mutexattr_t()
-//var attr3 = pthread_mutexattr_t()
-//
-//// Initializing attributes
-//// !!!!!! FUN FACT, THIS IS WHAT I FORGOT TO DO FROM THE VERY BEGINNING !!!!!!
-//var a1: Int32 = pthread_mutexattr_init(&attr1)
-//var a2: Int32 = pthread_mutexattr_init(&attr2)
-//var a3: Int32 = pthread_mutexattr_init(&attr3)
 
 /*
  
@@ -106,15 +86,12 @@ if (a3 != 0) {
   errorHandler(no: a3, msg: "mutex attribute init: a3")
 }
 
-*/
 
 // Initializing mutexes
 //var m1: Int32 = pthread_mutex_init(&mainLock_1, &attr1)
 //var m2: Int32 = pthread_mutex_init(&childLock_2, &attr2)
 //var m3: Int32 = pthread_mutex_init(&enterLock_3, &attr3)
 // Could also just have done pthread_mutex_init(&lockX, nil)
-
-/*
 
 // Error handling
 if (m1 != 0) {
@@ -140,15 +117,16 @@ var sem2: SemaModule = SemaModule(value: 1)
 
 var inputBuffer: String = ""
 
+sem1.procure() // Sem 1 procure
+
 // Constructing my struct stored values
-var structArgs: InputStruct = InputStruct(/*&mainLock_1, &childLock_2, &enterLock_3,*/&sem1, &sem2, &inputBuffer)
+var structArgs: InputStruct = InputStruct(&sem1, &sem2, &inputBuffer)
 
 var pt: pthread_t?
 
 // print("create new child thread") /* For Debugging */
 
-sem1.procure()
-sem2.procure()
+sem2.procure() // Sem2 procure
 
 // Creating a new thread, passing in the address of the struct
 var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
@@ -160,8 +138,9 @@ if let stdin = readLine() {
   inputBuffer = stdin
 }
 
-//pthread_mutex_unlock(&mainLock_1) // Allows repeatFunc to print input
-//pthread_mutex_lock(&childLock_2) // Makes main wait for repeatFunc to unlock/finish
+sem2.vacate()   // Allows repeatFunc to print input
+
+sem1.procure() // Makes main wait for repeatFunc to unlock/finish
 
 print("Press Enter to Quit: ")
 
@@ -170,10 +149,13 @@ if let stdin = readLine() {
   
 }
 
-//pthread_mutex_unlock(&enterLock_3)
-//pthread_mutex_unlock(&childLock_2)
+sem2.vacate()
+sem1.procure()
 
 print("Child is exiting")
+
+sem2.vacate()
+sem1.procure()
 
 // Joining the threads
 var status: Int32 = pthread_join(pt!, nil)
@@ -193,8 +175,3 @@ if (status != 0) {
 } else {
   //print("pthread_join ran successfully") /* For Debugging */
 }
-
-// Destroy the mutexes to clear up resources
-//pthread_mutex_destroy(&mainLock_1)
-//pthread_mutex_destroy(&childLock_2)
-//pthread_mutex_destroy(&enterLock_3)
