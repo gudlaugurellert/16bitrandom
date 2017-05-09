@@ -13,9 +13,10 @@ import Foundation
 // Struct that I will pass into the thread I create
 struct InputStruct {
   
-  var mainLock_1: UnsafeMutablePointer<pthread_mutex_t>
-  var childLock_2: UnsafeMutablePointer<pthread_mutex_t>
-  var enterLock_3: UnsafeMutablePointer<pthread_mutex_t>
+//  var mainLock_1: UnsafeMutablePointer<pthread_mutex_t>
+//  var childLock_2: UnsafeMutablePointer<pthread_mutex_t>
+//  var enterLock_3: UnsafeMutablePointer<pthread_mutex_t>
+  
   var inputBuffer: UnsafeMutablePointer<String>
   
   init(_ mutex1: UnsafeMutablePointer<pthread_mutex_t>,
@@ -43,10 +44,10 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
   let temp = input
   typealias StructP = UnsafeMutablePointer<InputStruct>
   let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
-
+  
   pthread_mutex_lock(sp.pointee.childLock_2)
   pthread_mutex_lock(sp.pointee.mainLock_1)
-
+  
   // print("printing input:") /* For Debugging */
   // Printing out the input from stdin stored in my struct
   print(sp.pointee.inputBuffer.pointee)
@@ -57,7 +58,7 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
   pthread_mutex_unlock(sp.pointee.mainLock_1)
   pthread_mutex_unlock(sp.pointee.childLock_2)
   pthread_mutex_unlock(sp.pointee.enterLock_3)
-
+  
   print("Exiting repeatFunc") /* For Debugging */
   
   return nil
@@ -128,7 +129,7 @@ var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
 
 // Reading in the input
 if let stdin = readLine() {
-//  print("first input readline") /* For Debugging */
+  //  print("first input readline") /* For Debugging */
   pthread_mutex_lock(&enterLock_3)
   inputBuffer = stdin
 }

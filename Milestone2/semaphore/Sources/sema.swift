@@ -7,86 +7,68 @@
  Assignment 2
  Milestone 2 - semaphores
  */
+import Foundation
 
-public class Sema {
+class SemaModule {
 
-  var m, m2: pthread_mutex_t = thread_mutex_t()
-  var cond: pthread_cond_t = pthread_cond_t()
+  var lockProcure = pthread_mutex_t()
+  var lockVacate = pthread_mutex_t()
+  var lockWait = pthread_mutex_t()
+  var val: Int32
+  var cond = pthread_cond_t()
   
-  public init() {
-    pthread_mutex_init(&m, nil)
-    pthread_mutex_init(&m2, nil)
+  init(value: Int32) {
+    val = value
+    pthread_mutex_init(&lockProcure, nil)
+    pthread_mutex_init(&lockVacate, nil)
+    pthread_mutex_init(&lockWait, nil)
     pthread_cond_init(&cond, nil)
   }
-  
-  public func lock() {
-    pthread_mutex_lock(&self.mutex)
+
+  deinit {
+    pthread_mutex_destroy(&lockProcure)
+    pthread_mutex_destroy(&lockVacate)
+    pthread_mutex_destroy(&lockWait)
+    pthread_cond_destroy(&cond)
   }
+}
+extension SemaModule {
   
-  public func unlock() {
-    pthread_mutex_unlock(&self.mutex)
-  }
-  
-  public func signal() {
-    pthread_cond_signal(&self.cond)
-  }
-  
-  public func destroy() {
-    pthread_cond_destroy(&self.cond)
-  }
-  
-  public func procure(c: pthread_cond_t, m: pthread_mutex_t) {
-    // start critical
-    lock(&m)
+  func procure() {
     
-    while(c <= 0) {
-      pthread_cond_wait(&c, &m)
+    // Start critical
+    pthread_mutex_lock(&lockProcure)
+    
+    // Wait for Signal from vacate()
+    while(val <= 0) {
+      pthread_cond_wait(&cond, &lockProcure)
     }
     
-    // Decrement by one
-    c -= 1
+    // Claim Semaphore
+    val -= 1
     
-    // end critical
-    unlock(&m)
+    // End critical
+    pthread_mutex_unlock(&lockProcure)
   }
-  
-  public func vacate(c: pthread_cond_t, m: pthread_mutex_t) {
-    // start critical?
-    lock(m)
+
+  func vacate() {
     
-    // Increment by one
-    c += 1
+    // Start critical
+    pthread_mutex_lock(&lockVacate)
     
-    // signal vacate
-    signal(c)
+    // Release Semaphore
+    val += 1
     
-    // end critical
-    unlock(m)
+    // Signal Anyone Waiting
+    pthread_cond_signal(&cond)
+    
+    // End Critical
+    pthread_mutex_unlock(&lockVacate)
   }
-  
-  //procure(Semaphore *semaphore)
-  //{
-  //  begin_critical_section(semaphore);  // make the following concurrency-safe
-  //  while (semaphore->value <= 0)
-  //  wait_for_vacate(semaphore);     // wait for signal from vacate()
-  //  semaphore->value--;                 // claim the Semaphore
-  //  end_critical_section(semaphore);
-  //}
-  //
-  //vacate(Semaphore *semaphore)
-  //{
-  //  begin_critical_section(semaphore);  // make the following concurrency-safe
-  //  semaphore->value++;                 // release the Semaphore
-  //  signal_vacate(semaphore);           // signal anyone waiting on this
-  //  end_critical_section(semaphore);
-  //}
-  
 }
-// pthread_cond_signal()
-// pthread_cond_destroy()
-// pthread_cond_wait() Note that this function takes a mutex as a second parameter
-// That mutex must be locked at the time  pthread_cond_wait() gets called
 
-
-
-
+//  func destroy( m: UnsafeMutablePointer<pthread_mutex_t>,
+//                c: UnsafeMutablePointer<pthread_cond_t>) {
+//    pthread_mutex_destroy(&m)
+//    pthread_cond_destroy(&c)
+//  }
