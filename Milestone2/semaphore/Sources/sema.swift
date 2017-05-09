@@ -11,57 +11,94 @@
 import Foundation
 
 class SemaModule {
+  
+  // Function that handles all my error checking
+  func errorHandler(no: Int32, msg: String) {
+    errno = no
+    perror("Error in: \(msg) | Code: \(errno)")
+    exit(EXIT_FAILURE)
+  }
 
-  var lockProcure = pthread_mutex_t()
-  var lockVacate = pthread_mutex_t()
-  var lockWait = pthread_mutex_t()
+  var lock = pthread_mutex_t()
   var val: Int32
   var cond = pthread_cond_t()
   
   init(value: Int32) {
+    
     val = value
-    pthread_mutex_init(&lockProcure, nil)
-    pthread_mutex_init(&lockVacate, nil)
-    pthread_mutex_init(&lockWait, nil)
-    pthread_cond_init(&cond, nil)
+    let m = pthread_mutex_init(&lock, nil)
+    // Error check
+    if (m != 0) { errorHandler(no: m, msg: "sema.swift mutex_init(&lock) failed") }
+    
+    let c = pthread_cond_init(&cond, nil)
+    
+    // Error check
+    if (c != 0) { errorHandler(no: c, msg: "sema.swift cond_init(&cond) failed") }
   }
 
+
   deinit {
-    pthread_mutex_destroy(&lockProcure)
-    pthread_mutex_destroy(&lockVacate)
-    pthread_mutex_destroy(&lockWait)
-    pthread_cond_destroy(&cond)
+    
+    // Destroy mutex
+    let dm = pthread_mutex_destroy(&lock)
+    
+    // Error Check
+    if (dm != 0) { errorHandler(no: dm, msg: "sema.swift mutex_destroy(&lock) failed") }
+    
+    // Destroy condition variable
+    let dc = pthread_cond_destroy(&cond)
+    
+    // Error check
+    if (dc != 0) { errorHandler(no: dc, msg: "sema.swift cond_destroy(&lock) failed") }
   }
 }
 extension SemaModule {
   
   func procure() {
     // Start critical
-    pthread_mutex_lock(&lockProcure)
+    let ml1 = pthread_mutex_lock(&lock)
+    
+    // Error check
+    if (ml1 != 0) { errorHandler(no: ml1, msg: "sema.swift procure() mutex_lock(&lock) failed") }
     
     // Wait for Signal from vacate()
     while(val <= 0) {
-      pthread_cond_wait(&cond, &lockProcure)
+      let cw = pthread_cond_wait(&cond, &lock)
+      
+      // Error check
+      if (cw != 0) { errorHandler(no: cw, msg: "sema.swift procure() cond_wait(&cond, &lock) failed") }
     }
     
     // Claim Semaphore
     val -= 1
     
     // End critical
-    pthread_mutex_unlock(&lockProcure)
+    let mu = pthread_mutex_unlock(&lock)
+    
+    // Error check
+    if (mu != 0) { errorHandler(no: mu, msg: "sema.swift procure() mutex_unlock(&lock) failed") }
   }
 
   func vacate() {
     // Start critical
-    pthread_mutex_lock(&lockVacate)
+    let ml2 = pthread_mutex_lock(&lock)
+    
+    // Error Check
+    if (ml2 != 0) { errorHandler(no: ml2, msg: "sema.swift vacate() mutex_lock(&lock) failed") }
     
     // Release Semaphore
     val += 1
     
     // Signal Anyone Waiting
-    pthread_cond_signal(&cond)
+    let cs = pthread_cond_signal(&cond)
+    
+    // Error Check
+    if (cs != 0) { errorHandler(no: cs, msg: "sema.swift vacate() cond_signal(&cond) failed") }
     
     // End Critical
-    pthread_mutex_unlock(&lockVacate)
+    let mu2 = pthread_mutex_unlock(&lock)
+    
+    // Error check
+    if (mu2 != 0) { errorHandler(no: mu2, msg: "sema.swift vacate() mutex_unlock(&lock) failed") }
   }
 }

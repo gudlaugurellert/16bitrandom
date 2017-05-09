@@ -28,7 +28,7 @@ struct InputStruct {
   }
 }
 
-// Function that handles all my error checking
+// Function that handles all my error check printing
 func errorHandler(no: Int32, msg: String) {
   errno = no
   perror("Error in: \(msg) | Code: \(errno)")
@@ -36,20 +36,16 @@ func errorHandler(no: Int32, msg: String) {
 }
 
 func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
-  print("entering child thread/func") /* For Debugging */
-  
+//  print("entering child thread/func") /* For Debugging */
+  sleep(10)
   let temp = input
   typealias StructP = UnsafeMutablePointer<InputStruct>
   let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
   
   sp.pointee.sem2.pointee.procure()
-  
-//  pthread_mutex_lock(sp.pointee.childLock_2)
-//  pthread_mutex_lock(sp.pointee.mainLock_1)
-  
-  // print("printing input:") /* For Debugging */
-  
-  // Printing out the input from stdin stored in my struct
+
+// print("printing input:") /* For Debugging */
+
   print(sp.pointee.inputBuffer.pointee)
   
   sp.pointee.sem1.pointee.vacate()
@@ -58,60 +54,13 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
   sp.pointee.sem1.pointee.vacate()
   sp.pointee.sem2.pointee.procure()
   sp.pointee.sem1.pointee.vacate()
-
-//  pthread_mutex_unlock(sp.pointee.childLock_2)
-//  pthread_mutex_lock(sp.pointee.enterLock_3)
-//  
-//  pthread_mutex_unlock(sp.pointee.mainLock_1)
-//  pthread_mutex_unlock(sp.pointee.childLock_2)
-//  pthread_mutex_unlock(sp.pointee.enterLock_3)
   
-  print("Exiting repeatFunc") /* For Debugging */
+// print("Exiting repeatFunc") /* For Debugging */
   
   return nil
 }
 
-/*
- 
-// Error handling
-if (a1 != 0) {
-  errorHandler(no: a1, msg: "mutex attribute init: a1")
-}
-
-if (a2 != 0) {
-  errorHandler(no: a2, msg: "mutex attribute init: a2")
-}
-
-if (a3 != 0) {
-  errorHandler(no: a3, msg: "mutex attribute init: a3")
-}
-
-
-// Initializing mutexes
-//var m1: Int32 = pthread_mutex_init(&mainLock_1, &attr1)
-//var m2: Int32 = pthread_mutex_init(&childLock_2, &attr2)
-//var m3: Int32 = pthread_mutex_init(&enterLock_3, &attr3)
-// Could also just have done pthread_mutex_init(&lockX, nil)
-
-// Error handling
-if (m1 != 0) {
-  errorHandler(no: m1, msg: "mutex init: m1")
-}
-
-if (m2 != 0) {
-  errorHandler(no: m2, msg: "mutex init: m2")
-}
-
-if (m3 != 0) {
-  errorHandler(no: m3, msg: "mutex init: m3")
-}
- 
-*/
-
-// Locking first mutex for main thread
-//pthread_mutex_lock(&mainLock_1)
-
-
+// Creating my semaphores
 var sem1: SemaModule = SemaModule(value: 1)
 var sem2: SemaModule = SemaModule(value: 1)
 
@@ -166,12 +115,12 @@ print("Child is gone")
 if (s != 0) {
   errorHandler(no: s, msg: "thread_create")
 } else {
-  //print("pthread_create ran successfully") /* For Debugging */
+// print("pthread_create ran successfully") /* For Debugging */
 }
 
 
 if (status != 0) {
   errorHandler(no: s, msg: "pthread_join")
 } else {
-  //print("pthread_join ran successfully") /* For Debugging */
+// print("pthread_join ran successfully") /* For Debugging */
 }
