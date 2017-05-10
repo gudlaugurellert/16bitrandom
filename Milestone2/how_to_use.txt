@@ -1,0 +1,30 @@
+/*
+ Author: Eli Birgisson
+ s2956190
+ Griffith University
+ Trimester 1, 2017
+ 3420ICT Systems Programming
+ Assignment 2
+ Milestone 2 - semaphores
+ */
+
+ This is a how to use guide for this program.
+
+ The most basic description of this program is that it will repeat what the user types in the command line.
+
+ The more advanced description is that the program repeats the user input
+ using thread creation and "manually created semaphores".
+ When the program first runs, it runs on its own main thread.
+ Then the program creates a child thread.
+ This new child thread is in charge of printing out the user input.
+ The user input is happening inside the main thread but the printing
+ is happening inside the child thread.
+
+ Program is located in a hidden folder called "bin" and is named "semaphore"
+
+ In order to use the program the user will need to follow these steps:
+ 1. Open a terminal.
+ 2. Change Directory into Milestone2 folder.
+ 3. Execute the program by typing: ./.bin/semaphore
+ 4. Write a sentence and press Enter.
+ 5. Follow instructions that follows.

@@ -1,0 +1,32 @@
+/*
+ Author: Eli Birgisson
+ s2956190
+ Griffith University
+ Trimester 1, 2017
+ 3420ICT Systems Programming
+ Assignment 2
+ Milestone 2 - semaphores
+ */
+
+ Test report.
+
+ Test 1:
+ 	*Using sleep() to demonstrate that the flow of the program is correct.
+
+ There is a sleep function in line 51 inside main.swift. The sleep is located at the very beginning of the newly created child thread.
+
+ This sleep funciton is currently commented out.
+ To test that the order of the program remains correct, uncomment the sleep function and run the program.
+
+ You will see that if you wait for the sleep(5 seconds), the program remains waiting for the user input in the main thread. The program will then print out the input inside the child thread.
+
+ If you run the program again and immediatelly write something, it will be printed out 5 seconds later.
+
+ The sleep function does not interfere with the flow/order of the program.
+
+ Test 2:
+ 	*Using print() in key areas to demonstrate where things are happening inside the program.
+
+ There are several print() functions commented out with the text: 
+ 	/* For Debugging */
+ Uncomment all print() that have "For Debugging" to see what happens where inside the program.

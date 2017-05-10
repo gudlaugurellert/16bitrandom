@@ -28,16 +28,37 @@ struct InputStruct {
   }
 }
 
-// Function that handles all my error check printing
+/**
+ Function that handles all my error checking
+ - parameter no: The Error Number Passed
+ - parameter msg: Message passed
+ */
 func errorHandler(no: Int32, msg: String) {
   errno = no
   perror("Error in: \(msg) | Code: \(errno)")
   exit(EXIT_FAILURE)
 }
 
+/**
+ Function that is essentially the child thread
+ - parameter input: A pointer to the InputStruct struct
+ - returns: nil
+ */
 func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
 //  print("entering child thread/func") /* For Debugging */
-  sleep(10)
+
+  /* 
+        For testing purposes:
+        The program will not change
+        the order of running things
+        even though there is a sleep()
+        function here.
+        If user types in something immediatelly
+        when the program starts, it will repeat 
+        5 seconds later.
+   */
+  // sleep(5)
+  
   let temp = input
   typealias StructP = UnsafeMutablePointer<InputStruct>
   let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
@@ -61,12 +82,13 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
 }
 
 // Creating my semaphores
+// Using two with value of 1
 var sem1: SemaModule = SemaModule(value: 1)
 var sem2: SemaModule = SemaModule(value: 1)
 
 var inputBuffer: String = ""
 
-sem1.procure() // Sem 1 procure
+sem1.procure()
 
 // Constructing my struct stored values
 var structArgs: InputStruct = InputStruct(&sem1, &sem2, &inputBuffer)
@@ -75,7 +97,7 @@ var pt: pthread_t?
 
 // print("create new child thread") /* For Debugging */
 
-sem2.procure() // Sem2 procure
+sem2.procure()
 
 // Creating a new thread, passing in the address of the struct
 var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
@@ -83,7 +105,6 @@ var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
 // Reading in the input
 if let stdin = readLine() {
   //  print("first input readline") /* For Debugging */
-//  pthread_mutex_lock(&enterLock_3)
   inputBuffer = stdin
 }
 
