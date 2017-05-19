@@ -12,10 +12,10 @@ import Foundation
 
 class StorageHandler {
   
-  func producer() -> UInt16? {
-    
+  func producer() {
+
     var randNum: UInt16 = 0
-    let flag: Bool = true
+
     let path = "/dev/random"
     let fd = open(path, O_RDONLY)
     
@@ -24,21 +24,21 @@ class StorageHandler {
       // read() will return the size of the thing it read.
       // * CHECK IF r IS THE SAME SIZE AS THE VALUE I AM TRYING TO GET
       // * IF r IS NOT SAME SIZE, THEN I GET ERROR
-      while (flag) {
-        
+
+      while(true) {
         let r = read(fd, &randNum, MemoryLayout<UInt16>.size)
         
         if (r != 2) {
           print("some error with read() ?")
-          print(r)
+  //        print(r)
         }
         
         let hex: String = String(randNum, radix: 16)
-        print(index)
+  //      print(index)
         print("Random number is '\(randNum)' or '0x\(hex)'")
-        
-        return(randNum)
+        put_buffer(num: randNum)
       }
+
       
       
     } else {
@@ -46,25 +46,18 @@ class StorageHandler {
     }
     
     close(fd)
-    
-    return nil
   }
   
   // buffer is pointer to Struct
   // value is the random number to put into buffer
-  func put_buffer(buffer: UnsafeMutableRawPointer) {
-    
-    var temp = buffer // Struct
-    let val = producer()   // Random number
+  func put_buffer(num: UInt16) {
+    var randomNumberGenerated = num
+    print("putbuffer: \(randomNumberGenerated)")
+    //var temp = bufferStruct // Struct
+//      print(bufferStruct.pointee.cmdInput.pointee)
+//    print(temp.pointee.cmdInput.pointee)
     //print("put_buffer val: \(val)")
-    
-    typealias StructP = UnsafeMutablePointer<InputStruct>
-    let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
-    
-    
-    
-    
-    
+
   }
   
   func get_buffer() {

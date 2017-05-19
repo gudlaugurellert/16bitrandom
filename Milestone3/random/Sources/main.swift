@@ -13,6 +13,8 @@ import Foundation
 // Struct that I will pass into the thread I create
 struct InputStruct {
   
+  var randGen: UnsafeMutablePointer<StorageHandler>
+  
   var sem1: UnsafeMutablePointer<SemaModule>
   var sem2: UnsafeMutablePointer<SemaModule>
   
@@ -21,21 +23,26 @@ struct InputStruct {
   var numberBuffer: UnsafeMutablePointer<[UInt16]>
   var min: UnsafeMutablePointer<Int>
   var max: UnsafeMutablePointer<Int>
-  var cmdInput: UnsafeMutablePointer<[String]>
+  var cmdInput: UnsafeMutablePointer<[Int]>
+  var flag: UnsafeMutablePointer<Bool>
   
-  init( _ semaphore1: UnsafeMutablePointer<SemaModule>,
+  init( _ randomGen:  UnsafeMutablePointer<StorageHandler>,
+        _ semaphore1: UnsafeMutablePointer<SemaModule>,
         _ semaphore2: UnsafeMutablePointer<SemaModule>,
         _ buffer:     UnsafeMutablePointer<[UInt16]>,
         _ minimum:    UnsafeMutablePointer<Int>,
         _ maximum:    UnsafeMutablePointer<Int>,
-        _ input:      UnsafeMutablePointer<[String]>) {
+        _ input:      UnsafeMutablePointer<[Int]>,
+        _ quitFlag:   UnsafeMutablePointer<Bool>) {
     
+    self.randGen = randomGen
     self.sem1 = semaphore1
     self.sem2 = semaphore2
     self.numberBuffer = buffer
     self.min = minimum
     self.max = maximum
     self.cmdInput = input
+    self.flag = quitFlag
   }
 }
 
@@ -58,16 +65,17 @@ func errorHandler(no: Int32, msg: String) {
 func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
 //    print("entering child thread/func") /* For Debugging */
   
-  let temp = input
+  var temp = input
   typealias StructP = UnsafeMutablePointer<InputStruct>
-  let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
+  var sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
 
 //  print("printing input:") /* For Debugging */
 
   sp.pointee.sem2.pointee.procure()
   
+  sp.pointee.randGen.pointee.producer()
   
-  print(sp.pointee.cmdInput.pointee)
+//  print(sp.pointee.cmdInput.pointee)
 
   sp.pointee.sem1.pointee.vacate()
   sp.pointee.sem2.pointee.procure()
@@ -83,6 +91,7 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
 
 // Creating my semaphores
 // Using two with value of 1
+var rand: StorageHandler = StorageHandler()
 var sem1: SemaModule = SemaModule(value: 1)
 var sem2: SemaModule = SemaModule(value: 1)
 
@@ -91,12 +100,14 @@ var min: Int = 0
 
 var numberBuffer: [UInt16] = [] // Empty array of type UInt16
 
-var commandLineInput = [String]()
+var commandLineInput = [Int]()
+
+var exitFlag: Bool = false
 
 sem1.procure()
 
 // Constructing my struct stored values
-var structArgs: InputStruct = InputStruct(&sem1, &sem2, &numberBuffer, &min, &max, &commandLineInput)
+var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &numberBuffer, &min, &max, &commandLineInput, &exitFlag)
 
 var pt: pthread_t?
 
@@ -111,11 +122,26 @@ print("Enter a number")
 // Reading in the input
 if let stdin = readLine() {
 //  print("first input readline") /* For Debugging */
-  commandLineInput = stdin.components(separatedBy: " ")
-  print("stdin cmd: \(commandLineInput)")
+  
+//  stdin = stdin.components(separatedBy: " ")
+   var temp = stdin.components(separatedBy: " ")
+  
+  for index in temp {
+    if let num = Int(index) {
+      //print(num)
+      commandLineInput.append(num)
+    } else {
+      print("Error: Number was not entered.")
+    }
+  }
+
+  //
+//  commandLineInput = stdin
   
   
-  //inputBuffer = stdin
+//  print("stdin cmd: \(commandLineInput)")
+  
+
 }
 
 sem2.vacate()   // Allows repeatFunc to print input
