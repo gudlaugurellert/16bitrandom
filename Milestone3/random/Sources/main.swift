@@ -25,6 +25,8 @@ struct InputStruct {
   var max: UnsafeMutablePointer<Int>
   var cmdInput: UnsafeMutablePointer<[Int]>
   var flag: UnsafeMutablePointer<Bool>
+  var minBuffFillFlag: UnsafeMutablePointer<Bool>
+  var maxBuffFillFlag: UnsafeMutablePointer<Bool>
   
   init( _ randomGen:  UnsafeMutablePointer<StorageHandler>,
         _ semaphore1: UnsafeMutablePointer<SemaModule>,
@@ -33,7 +35,9 @@ struct InputStruct {
         _ minimum:    UnsafeMutablePointer<Int>,
         _ maximum:    UnsafeMutablePointer<Int>,
         _ input:      UnsafeMutablePointer<[Int]>,
-        _ quitFlag:   UnsafeMutablePointer<Bool>) {
+        _ quitFlag:   UnsafeMutablePointer<Bool>,
+        _ fillMinFlag:UnsafeMutablePointer<Bool>,
+        _ fillMaxFlag:UnsafeMutablePointer<Bool> ) {
     
     self.randGen = randomGen
     self.sem1 = semaphore1
@@ -43,6 +47,8 @@ struct InputStruct {
     self.max = maximum
     self.cmdInput = input
     self.flag = quitFlag
+    self.minBuffFillFlag = fillMinFlag
+    self.maxBuffFillFlag = fillMaxFlag
   }
 }
 
@@ -65,17 +71,17 @@ func errorHandler(no: Int32, msg: String) {
 func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
 //    print("entering child thread/func") /* For Debugging */
   
-  var temp = input
+  let temp = input
   typealias StructP = UnsafeMutablePointer<InputStruct>
-  var sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
+  let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
 
 //  print("printing input:") /* For Debugging */
 
-  sp.pointee.sem2.pointee.procure()
+  //sp.pointee.sem2.pointee.procure()
   
-  sp.pointee.randGen.pointee.producer()
-  
-//  print(sp.pointee.cmdInput.pointee)
+  //while(sp.pointee.numberBuffer.pointee.count <= sp.pointee.max.pointee) {
+    sp.pointee.randGen.pointee.put_buffer(strukkt: temp)
+  //}
 
   sp.pointee.sem1.pointee.vacate()
   sp.pointee.sem2.pointee.procure()
@@ -95,6 +101,7 @@ var rand: StorageHandler = StorageHandler()
 var sem1: SemaModule = SemaModule(value: 1)
 var sem2: SemaModule = SemaModule(value: 1)
 
+
 var max: Int = 5
 var min: Int = 0
 
@@ -103,62 +110,81 @@ var numberBuffer: [UInt16] = [] // Empty array of type UInt16
 var commandLineInput = [Int]()
 
 var exitFlag: Bool = false
+var minBuffFillFlag: Bool = false
+var maxBuffFillFlag: Bool = false
+
+var randomNumber: UInt16 = 0
+var hex: String
 
 sem1.procure()
 
 // Constructing my struct stored values
-var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &numberBuffer, &min, &max, &commandLineInput, &exitFlag)
+var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &numberBuffer, &min, &max, &commandLineInput, &exitFlag, &minBuffFillFlag, &maxBuffFillFlag)
 
 var pt: pthread_t?
 
 // print("create new child thread") /* For Debugging */
 
-sem2.procure()
 
+sem2.procure()
 // Creating a new thread, passing in the address of the struct
 var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
 
-print("Enter a number")
-// Reading in the input
-if let stdin = readLine() {
-//  print("first input readline") /* For Debugging */
-  
-//  stdin = stdin.components(separatedBy: " ")
-   var temp = stdin.components(separatedBy: " ")
-  
-  for index in temp {
-    if let num = Int(index) {
-      //print(num)
-      commandLineInput.append(num)
+
+
+while(!exitFlag) {
+  print("++Enter a number")
+  // Reading in the input
+  if let stdin = readLine() {
+    //  print("first input readline") /* For Debugging */
+    
+    var temp = stdin.components(separatedBy: " ")
+    
+    if (temp[0] == "exit") {
+      print("exitflag is true")
+      exitFlag = true
+      
     } else {
-      print("Error: Number was not entered.")
+      
+      for index in temp {
+        
+        if let num = Int(index) {
+          
+          commandLineInput.append(num)
+          
+        } else {
+          print("Error: Incorrect input. Enter a number.")
+          //exit(EXIT_FAILURE)
+        }
+      }
+      
+      for index in 0..<commandLineInput[0] {
+        randomNumber = rand.get_buffer(strukkt: &structArgs)
+        hex = String(randomNumber, radix: 16)
+        
+        print("Random number is '\(randomNumber)' or '0x\(hex)'")
+        
+      }
     }
   }
-
-  //
-//  commandLineInput = stdin
   
   
-//  print("stdin cmd: \(commandLineInput)")
-  
-
 }
+print("exiting while loop")
+
 
 sem2.vacate()   // Allows repeatFunc to print input
 
 sem1.procure() // Makes main wait for repeatFunc to unlock/finish
 
-print("Press Enter to Quit: ")
+print("Press Enter to Quit: ????")
 
-if let stdin = readLine() {
-//   print("second input readline") /* For Debugging */
-  
-}
 
 sem2.vacate()
 sem1.procure()
 
 print("Child is exiting")
+
 
 sem2.vacate()
 sem1.procure()

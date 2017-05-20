@@ -11,57 +11,63 @@
 import Foundation
 
 class StorageHandler {
+  typealias StructP = UnsafeMutablePointer<InputStruct>
   
-  func producer() {
-
+  func producer(/*strukkt: UnsafeMutableRawPointer*/) -> UInt16? {
+    
+//    let testing = strukkt
+//    let sp: StructP = testing.assumingMemoryBound(to: InputStruct.self)
+    
+//    print("producer: \(sp.pointee.max.pointee)")
+    
     var randNum: UInt16 = 0
 
     let path = "/dev/random"
     let fd = open(path, O_RDONLY)
-    
+
     if fd != -1 {
-      
-      // read() will return the size of the thing it read.
-      // * CHECK IF r IS THE SAME SIZE AS THE VALUE I AM TRYING TO GET
-      // * IF r IS NOT SAME SIZE, THEN I GET ERROR
 
-      while(true) {
-        let r = read(fd, &randNum, MemoryLayout<UInt16>.size)
-        
-        if (r != 2) {
-          print("some error with read() ?")
-  //        print(r)
-        }
-        
-        let hex: String = String(randNum, radix: 16)
-  //      print(index)
-        print("Random number is '\(randNum)' or '0x\(hex)'")
-        put_buffer(num: randNum)
-      }
-
+      let r = read(fd, &randNum, MemoryLayout<UInt16>.size)
       
+      if (r != 2) { print("some error with read() ?") }
       
+//      let hex: String = String(randNum, radix: 16)
+//      print("Random number is '\(randNum)' or '0x\(hex)'")
+      
+      return randNum
     } else {
       print("error opening /dev/random")
+      return nil
     }
-    
+
     close(fd)
+    return nil
   }
   
-  // buffer is pointer to Struct
-  // value is the random number to put into buffer
-  func put_buffer(num: UInt16) {
-    var randomNumberGenerated = num
-    print("putbuffer: \(randomNumberGenerated)")
-    //var temp = bufferStruct // Struct
-//      print(bufferStruct.pointee.cmdInput.pointee)
-//    print(temp.pointee.cmdInput.pointee)
-    //print("put_buffer val: \(val)")
-
-  }
-  
-  func get_buffer() {
+  func put_buffer(strukkt: UnsafeMutableRawPointer) {
     
+    let testing = strukkt
+    let sp: StructP = testing.assumingMemoryBound(to: InputStruct.self)
+    
+    // Populating the buffer with random numbers
+    for _ in 0..<sp.pointee.max.pointee {
+      
+      if let randomNumberGenerated = producer(/*strukkt: testing*/) {
+        
+        sp.pointee.numberBuffer.pointee.append(randomNumberGenerated)
+      }
+    }
+    print("something put in buffer")
   }
-
+  
+  
+  func get_buffer(strukkt: UnsafeMutableRawPointer) -> UInt16 {
+    
+    let testing = strukkt
+    let sp: StructP = testing.assumingMemoryBound(to: InputStruct.self)
+    
+    let oldestNumber = sp.pointee.numberBuffer.pointee.removeFirst()
+    print("something removed from buffer")
+    return oldestNumber
+  }
 }
