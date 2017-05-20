@@ -26,8 +26,6 @@ struct InputStruct {
   var max: UnsafeMutablePointer<Int>
   var cmdInput: UnsafeMutablePointer<[Int]>
   var exitFlag: UnsafeMutablePointer<Bool>
-  var minBuffFillFlag: UnsafeMutablePointer<Bool>
-  var maxBuffFillFlag: UnsafeMutablePointer<Bool>
   
   init( _ randomGen:  UnsafeMutablePointer<StorageHandler>,
         _ semaphore1: UnsafeMutablePointer<SemaModule>,
@@ -37,9 +35,7 @@ struct InputStruct {
         _ minimum:    UnsafeMutablePointer<Int>,
         _ maximum:    UnsafeMutablePointer<Int>,
         _ input:      UnsafeMutablePointer<[Int]>,
-        _ quitFlag:   UnsafeMutablePointer<Bool>,
-        _ fillMinFlag:UnsafeMutablePointer<Bool>,
-        _ fillMaxFlag:UnsafeMutablePointer<Bool> ) {
+        _ quitFlag:   UnsafeMutablePointer<Bool>) {
     
     self.randGen = randomGen
     self.sem1 = semaphore1
@@ -50,8 +46,6 @@ struct InputStruct {
     self.max = maximum
     self.cmdInput = input
     self.exitFlag = quitFlag
-    self.minBuffFillFlag = fillMinFlag
-    self.maxBuffFillFlag = fillMaxFlag
   }
 }
 
@@ -104,15 +98,13 @@ var commandLineInput = [Int]()
 
 // Boolean flags for the program
 var exitFlag: Bool = false
-var minBuffFillFlag: Bool = false
-var maxBuffFillFlag: Bool = false
 
 // Variables used when printing out stuff
 var randomNumber: UInt16 = 0
 var hex: String
 
 // Constructing the structs stored values
-var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &sem3, &numberBuffer, &min, &max, &commandLineInput, &exitFlag, &minBuffFillFlag, &maxBuffFillFlag)
+var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &sem3, &numberBuffer, &min, &max, &commandLineInput, &exitFlag)
 
 var pt: pthread_t?
 
