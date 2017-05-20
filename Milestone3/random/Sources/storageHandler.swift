@@ -13,12 +13,10 @@ import Foundation
 class StorageHandler {
   typealias StructP = UnsafeMutablePointer<InputStruct>
   
-  func producer(/*strukkt: UnsafeMutableRawPointer*/) -> UInt16? {
+  func producer(strukkt: UnsafeMutableRawPointer) {
     
-//    let testing = strukkt
-//    let sp: StructP = testing.assumingMemoryBound(to: InputStruct.self)
-    
-//    print("producer: \(sp.pointee.max.pointee)")
+    let testing = strukkt
+    let sp: StructP = testing.assumingMemoryBound(to: InputStruct.self)
     
     var randNum: UInt16 = 0
 
@@ -26,41 +24,43 @@ class StorageHandler {
     let fd = open(path, O_RDONLY)
 
     if fd != -1 {
-
-      let r = read(fd, &randNum, MemoryLayout<UInt16>.size)
       
-      if (r != 2) { print("some error with read() ?") }
-      
-//      let hex: String = String(randNum, radix: 16)
-//      print("Random number is '\(randNum)' or '0x\(hex)'")
-      
-      return randNum
+      while (!sp.pointee.exitFlag.pointee) {
+        
+        let r = read(fd, &randNum, MemoryLayout<UInt16>.size)
+        
+        sp.pointee.sem3.pointee.procure()
+        sp.pointee.sem1.pointee.procure()
+        
+        put_buffer(number: randNum, strukkt: testing)
+        
+        if (r != 2) { print("some error with read() ?") }
+        
+        sp.pointee.sem1.pointee.vacate()
+        sp.pointee.sem2.pointee.vacate()
+        
+      }
     } else {
       print("error opening /dev/random")
-      return nil
     }
-
+    
     close(fd)
-    return nil
   }
   
-  func put_buffer(strukkt: UnsafeMutableRawPointer) {
+  func put_buffer(number: UInt16, strukkt: UnsafeMutableRawPointer) {
+    
+    let numberToStore = number
     
     let testing = strukkt
     let sp: StructP = testing.assumingMemoryBound(to: InputStruct.self)
     
-    // Populating the buffer with random numbers
-    for _ in 0..<sp.pointee.max.pointee {
-      
-      if let randomNumberGenerated = producer(/*strukkt: testing*/) {
-        
-        sp.pointee.numberBuffer.pointee.append(randomNumberGenerated)
-      }
+    if (sp.pointee.numberBuffer.pointee.count < sp.pointee.max.pointee) {
+      sp.pointee.numberBuffer.pointee.append(numberToStore)
     }
+    
     print("something put in buffer")
   }
-  
-  
+
   func get_buffer(strukkt: UnsafeMutableRawPointer) -> UInt16 {
     
     let testing = strukkt
@@ -70,4 +70,5 @@ class StorageHandler {
     print("something removed from buffer")
     return oldestNumber
   }
+  
 }

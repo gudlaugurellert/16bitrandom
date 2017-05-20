@@ -17,6 +17,7 @@ struct InputStruct {
   
   var sem1: UnsafeMutablePointer<SemaModule>
   var sem2: UnsafeMutablePointer<SemaModule>
+  var sem3: UnsafeMutablePointer<SemaModule>
   
 //  var inputBuffer: UnsafeMutablePointer<String>
   
@@ -24,13 +25,14 @@ struct InputStruct {
   var min: UnsafeMutablePointer<Int>
   var max: UnsafeMutablePointer<Int>
   var cmdInput: UnsafeMutablePointer<[Int]>
-  var flag: UnsafeMutablePointer<Bool>
+  var exitFlag: UnsafeMutablePointer<Bool>
   var minBuffFillFlag: UnsafeMutablePointer<Bool>
   var maxBuffFillFlag: UnsafeMutablePointer<Bool>
   
   init( _ randomGen:  UnsafeMutablePointer<StorageHandler>,
         _ semaphore1: UnsafeMutablePointer<SemaModule>,
         _ semaphore2: UnsafeMutablePointer<SemaModule>,
+        _ semaphore3: UnsafeMutablePointer<SemaModule>,
         _ buffer:     UnsafeMutablePointer<[UInt16]>,
         _ minimum:    UnsafeMutablePointer<Int>,
         _ maximum:    UnsafeMutablePointer<Int>,
@@ -42,11 +44,12 @@ struct InputStruct {
     self.randGen = randomGen
     self.sem1 = semaphore1
     self.sem2 = semaphore2
+    self.sem3 = semaphore3
     self.numberBuffer = buffer
     self.min = minimum
     self.max = maximum
     self.cmdInput = input
-    self.flag = quitFlag
+    self.exitFlag = quitFlag
     self.minBuffFillFlag = fillMinFlag
     self.maxBuffFillFlag = fillMaxFlag
   }
@@ -75,65 +78,52 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
   typealias StructP = UnsafeMutablePointer<InputStruct>
   let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
 
-//  print("printing input:") /* For Debugging */
+  sp.pointee.randGen.pointee.producer(strukkt: temp)
 
-  //sp.pointee.sem2.pointee.procure()
-  
-  //while(sp.pointee.numberBuffer.pointee.count <= sp.pointee.max.pointee) {
-    sp.pointee.randGen.pointee.put_buffer(strukkt: temp)
-  //}
-
-  sp.pointee.sem1.pointee.vacate()
-  sp.pointee.sem2.pointee.procure()
-  
-  sp.pointee.sem1.pointee.vacate()
-  sp.pointee.sem2.pointee.procure()
-  sp.pointee.sem1.pointee.vacate()
-  
-//   print("Exiting repeatFunc") /* For Debugging */
-  
   return nil
 }
 
-// Creating my semaphores
-// Using two with value of 1
+
+/* MAIN */
+
+// Semaphores
 var rand: StorageHandler = StorageHandler()
 var sem1: SemaModule = SemaModule(value: 1)
 var sem2: SemaModule = SemaModule(value: 1)
+var sem3: SemaModule = SemaModule(value: 1)
 
-
+// Max and Min default values
 var max: Int = 5
 var min: Int = 0
 
-var numberBuffer: [UInt16] = [] // Empty array of type UInt16
+// The Array to hold all the random number
+var numberBuffer: [UInt16] = []
 
+// The Array to hold the numbers entered inside program
 var commandLineInput = [Int]()
 
+// Boolean flags for the program
 var exitFlag: Bool = false
 var minBuffFillFlag: Bool = false
 var maxBuffFillFlag: Bool = false
 
+// Variables used when printing out stuff
 var randomNumber: UInt16 = 0
 var hex: String
 
-sem1.procure()
-
-// Constructing my struct stored values
-var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &numberBuffer, &min, &max, &commandLineInput, &exitFlag, &minBuffFillFlag, &maxBuffFillFlag)
+// Constructing the structs stored values
+var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &sem3, &numberBuffer, &min, &max, &commandLineInput, &exitFlag, &minBuffFillFlag, &maxBuffFillFlag)
 
 var pt: pthread_t?
 
 // print("create new child thread") /* For Debugging */
 
-
-sem2.procure()
 // Creating a new thread, passing in the address of the struct
 var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
 
-
-
 while(!exitFlag) {
   print("++Enter a number")
+  
   // Reading in the input
   if let stdin = readLine() {
     //  print("first input readline") /* For Debugging */
@@ -143,6 +133,8 @@ while(!exitFlag) {
     if (temp[0] == "exit") {
       print("exitflag is true")
       exitFlag = true
+      sem1.vacate()
+      sem3.vacate()
       
     } else {
       
@@ -159,35 +151,22 @@ while(!exitFlag) {
       }
       
       for index in 0..<commandLineInput[0] {
+        sem2.procure()
+        sem1.procure()
         randomNumber = rand.get_buffer(strukkt: &structArgs)
         hex = String(randomNumber, radix: 16)
+        sem1.vacate()
+        sem3.vacate()
         
         print("Random number is '\(randomNumber)' or '0x\(hex)'")
         
       }
     }
   }
-  
-  
 }
-print("exiting while loop")
-
-
-sem2.vacate()   // Allows repeatFunc to print input
-
-sem1.procure() // Makes main wait for repeatFunc to unlock/finish
-
-print("Press Enter to Quit: ????")
-
-
-sem2.vacate()
-sem1.procure()
 
 print("Child is exiting")
 
-
-sem2.vacate()
-sem1.procure()
 
 // Joining the threads
 var status: Int32 = pthread_join(pt!, nil)
@@ -200,7 +179,6 @@ if (s != 0) {
 } else {
 //   print("pthread_create ran successfully") /* For Debugging */
 }
-
 
 if (status != 0) {
   errorHandler(no: s, msg: "pthread_join")
