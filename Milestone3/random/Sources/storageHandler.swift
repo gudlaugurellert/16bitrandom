@@ -15,8 +15,8 @@ class StorageHandler {
   
   func producer(strukkt: UnsafeMutableRawPointer) {
     
-    let testing = strukkt
-    let sp: StructP = testing.assumingMemoryBound(to: InputStruct.self)
+    //let testing = strukkt
+    let sp: StructP = strukkt.assumingMemoryBound(to: InputStruct.self)
     
     var randNum: UInt16 = 0
 
@@ -32,7 +32,7 @@ class StorageHandler {
         sp.pointee.sem3.pointee.procure()
         sp.pointee.sem1.pointee.procure()
         
-        put_buffer(number: randNum, strukkt: testing)
+        put_buffer(number: randNum, strukkt: strukkt)
         
         if (r != 2) { print("some error with read() ?") }
         
@@ -49,26 +49,26 @@ class StorageHandler {
   
   func put_buffer(number: UInt16, strukkt: UnsafeMutableRawPointer) {
     
-    let numberToStore = number
+    //let testing = strukkt
+    let sp: StructP = strukkt.assumingMemoryBound(to: InputStruct.self)
     
-    let testing = strukkt
-    let sp: StructP = testing.assumingMemoryBound(to: InputStruct.self)
+    //let numberToStore = number
     
-    if (sp.pointee.numberBuffer.pointee.count < sp.pointee.max.pointee) {
-      sp.pointee.numberBuffer.pointee.append(numberToStore)
+    for _ in 0..<sp.pointee.max.pointee {
+      
+      if(sp.pointee.numberBuffer.pointee.count < sp.pointee.max.pointee) {
+        sp.pointee.numberBuffer.pointee.append(number)
+      }
     }
-    
-    print("something put in buffer")
   }
 
   func get_buffer(strukkt: UnsafeMutableRawPointer) -> UInt16 {
     
-    let testing = strukkt
-    let sp: StructP = testing.assumingMemoryBound(to: InputStruct.self)
+//    let testing = strukkt
+    let sp: StructP = strukkt.assumingMemoryBound(to: InputStruct.self)
     
     let oldestNumber = sp.pointee.numberBuffer.pointee.removeFirst()
-    print("something removed from buffer")
+    
     return oldestNumber
   }
-  
 }

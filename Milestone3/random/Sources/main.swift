@@ -77,7 +77,6 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
   return nil
 }
 
-
 /* MAIN */
 
 // Semaphores
@@ -102,6 +101,7 @@ var exitFlag: Bool = false
 // Variables used when printing out stuff
 var randomNumber: UInt16 = 0
 var hex: String
+var incorrectInput: Bool = false
 
 // Constructing the structs stored values
 var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &sem3, &numberBuffer, &min, &max, &commandLineInput, &exitFlag)
@@ -113,22 +113,47 @@ var pt: pthread_t?
 // Creating a new thread, passing in the address of the struct
 var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
 
+let argc = CommandLine.argc
+let argTemp = CommandLine.arguments
+
+if argc > 1 {
+  if let argMax = Int(argTemp[1]) {
+    max = argMax
+  }
+
+  if let argMin = Int(argTemp[2]) {
+    min = argMin
+  }
+
+  if max < min {
+    max = 5
+    min = 0
+    print("Command arguments invalid. Max cannot be lower than min")
+    print("Resetting max and min to default values: max = 5 and min = 0")
+  }
+}
+
 while(!exitFlag) {
-  print("++Enter a number")
+  print(":: Enter a number>>")
   
   // Reading in the input
   if let stdin = readLine() {
-    //  print("first input readline") /* For Debugging */
     
+    // components.separatedBy(: _) returns a String array
     var temp = stdin.components(separatedBy: " ")
     
+    // If input is exit then quit the program
     if (temp[0] == "exit") {
-      print("exitflag is true")
       exitFlag = true
       sem1.vacate()
       sem3.vacate()
       
     } else {
+      
+      // Else if input is something other than exit then
+      // loop through every element in temp String array
+      // and parse into an Integer and then append that Integer
+      // to the commandLineInput Integer array
       
       for index in temp {
         
@@ -137,28 +162,44 @@ while(!exitFlag) {
           commandLineInput.append(num)
           
         } else {
-          print("Error: Incorrect input. Enter a number.")
-          //exit(EXIT_FAILURE)
+          
+          // If there is a element in the temp String array that
+          // can not be parsed into an Integer then that is an invalid
+          // input and the user is asked to re-enter the number
+          
+          // A flag incorrectInput is set to true, signaling the for loop
+          // not to process the input.
+          
+          print("Error: Incorrect input.")
+          incorrectInput = true
         }
       }
       
-      for index in 0..<commandLineInput[0] {
-        sem2.procure()
-        sem1.procure()
-        randomNumber = rand.get_buffer(strukkt: &structArgs)
-        hex = String(randomNumber, radix: 16)
-        sem1.vacate()
-        sem3.vacate()
+      // This is where the program prints out the random numbers.
+      // First it checks if the flag incorrectInput is set to false then it
+      // can proceed and print out a random number.
+      
+      if(!incorrectInput) {
         
-        print("Random number is '\(randomNumber)' or '0x\(hex)'")
-        
+        for index in 0..<commandLineInput[0] {
+          sem2.procure()
+          sem1.procure()
+          randomNumber = rand.get_buffer(strukkt: &structArgs)
+          hex = String(randomNumber, radix: 16)
+          sem1.vacate()
+          sem3.vacate()
+          
+          print("Random number is '\(randomNumber)' or '0x\(hex)'")
+        }
       }
+      
+      // Resetting the flag for the next input from the user.
+      incorrectInput = false
     }
   }
 }
 
 print("Child is exiting")
-
 
 // Joining the threads
 var status: Int32 = pthread_join(pt!, nil)
