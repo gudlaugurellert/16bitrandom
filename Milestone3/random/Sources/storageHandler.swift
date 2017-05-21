@@ -13,9 +13,10 @@ import Foundation
 class StorageHandler {
   typealias StructP = UnsafeMutablePointer<InputStruct>
   
+  // producer open "dev/random" and creates random numbers
+  // then the number is passed into the put_buffer function
   func producer(strukkt: UnsafeMutableRawPointer) {
-    
-    //let testing = strukkt
+
     let sp: StructP = strukkt.assumingMemoryBound(to: InputStruct.self)
     
     var randNum: UInt16 = 0
@@ -25,6 +26,7 @@ class StorageHandler {
 
     if fd != -1 {
       
+      // While the exitFlag is false, create random numbers
       while (!sp.pointee.exitFlag.pointee) {
         
         let r = read(fd, &randNum, MemoryLayout<UInt16>.size)
@@ -46,25 +48,18 @@ class StorageHandler {
     
     close(fd)
   }
-  
+
   func put_buffer(number: UInt16, strukkt: UnsafeMutableRawPointer) {
-    
-    //let testing = strukkt
+
     let sp: StructP = strukkt.assumingMemoryBound(to: InputStruct.self)
     
-    //let numberToStore = number
-    
-    for _ in 0..<sp.pointee.max.pointee {
-      
-      if(sp.pointee.numberBuffer.pointee.count < sp.pointee.max.pointee) {
-        sp.pointee.numberBuffer.pointee.append(number)
-      }
+    if(sp.pointee.numberBuffer.pointee.count < sp.pointee.max.pointee) {
+      sp.pointee.numberBuffer.pointee.append(number)
     }
   }
 
   func get_buffer(strukkt: UnsafeMutableRawPointer) -> UInt16 {
-    
-//    let testing = strukkt
+
     let sp: StructP = strukkt.assumingMemoryBound(to: InputStruct.self)
     
     let oldestNumber = sp.pointee.numberBuffer.pointee.removeFirst()

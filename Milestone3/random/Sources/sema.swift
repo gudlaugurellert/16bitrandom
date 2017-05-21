@@ -25,14 +25,14 @@ class SemaModule {
   
   // Creating Variables
   var lock = pthread_mutex_t()
-  var val: Int32
+  var val: Int
   var cond = pthread_cond_t()
   
   
   // Initializing Variables
   // value is set in main.swift
-  init(value: Int32) {
-    
+  init(value: Int) {
+
     val = value
     
     // Initializing the mutex

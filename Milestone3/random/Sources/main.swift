@@ -19,12 +19,10 @@ struct InputStruct {
   var sem2: UnsafeMutablePointer<SemaModule>
   var sem3: UnsafeMutablePointer<SemaModule>
   
-//  var inputBuffer: UnsafeMutablePointer<String>
-  
   var numberBuffer: UnsafeMutablePointer<[UInt16]>
   var min: UnsafeMutablePointer<Int>
   var max: UnsafeMutablePointer<Int>
-  var cmdInput: UnsafeMutablePointer<[Int]>
+  var numbersToPrint: UnsafeMutablePointer<Int>
   var exitFlag: UnsafeMutablePointer<Bool>
   
   init( _ randomGen:  UnsafeMutablePointer<StorageHandler>,
@@ -34,7 +32,7 @@ struct InputStruct {
         _ buffer:     UnsafeMutablePointer<[UInt16]>,
         _ minimum:    UnsafeMutablePointer<Int>,
         _ maximum:    UnsafeMutablePointer<Int>,
-        _ input:      UnsafeMutablePointer<[Int]>,
+        _ input:      UnsafeMutablePointer<Int>,
         _ quitFlag:   UnsafeMutablePointer<Bool>) {
     
     self.randGen = randomGen
@@ -44,7 +42,7 @@ struct InputStruct {
     self.numberBuffer = buffer
     self.min = minimum
     self.max = maximum
-    self.cmdInput = input
+    self.numbersToPrint = input
     self.exitFlag = quitFlag
   }
 }
@@ -71,7 +69,7 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
   let temp = input
   typealias StructP = UnsafeMutablePointer<InputStruct>
   let sp: StructP = temp.assumingMemoryBound(to: InputStruct.self)
-
+  
   sp.pointee.randGen.pointee.producer(strukkt: temp)
 
   return nil
@@ -79,11 +77,8 @@ func repeatFunc(input: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
 
 /* MAIN */
 
-// Semaphores
+// Reference to the StorageHandler class
 var rand: StorageHandler = StorageHandler()
-var sem1: SemaModule = SemaModule(value: 1)
-var sem2: SemaModule = SemaModule(value: 1)
-var sem3: SemaModule = SemaModule(value: 1)
 
 // Max and Min default values
 var max: Int = 5
@@ -92,10 +87,10 @@ var min: Int = 0
 // The Array to hold all the random number
 var numberBuffer: [UInt16] = []
 
-// The Array to hold the numbers entered inside program
-var commandLineInput = [Int]()
+// Variable to set the number of times a random number is printed
+var numbersToPrint: Int = 0
 
-// Boolean flags for the program
+// Boolean flag to exit the program
 var exitFlag: Bool = false
 
 // Variables used when printing out stuff
@@ -103,47 +98,55 @@ var randomNumber: UInt16 = 0
 var hex: String
 var incorrectInput: Bool = false
 
-// Constructing the structs stored values
-var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &sem3, &numberBuffer, &min, &max, &commandLineInput, &exitFlag)
-
-var pt: pthread_t?
-
-// print("create new child thread") /* For Debugging */
-
-// Creating a new thread, passing in the address of the struct
-var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
-
+// Command line arguments
 let argc = CommandLine.argc
 let argTemp = CommandLine.arguments
 
-if argc > 1 {
+// if the number of arguments are greater or equal to 3
+// then assign arg[1] to max and arg[2] to min.
+// There are other checks in place to make sure that
+// the input is correct.
+if argc >= 3 {
   if let argMax = Int(argTemp[1]) {
     max = argMax
   }
-
+  
   if let argMin = Int(argTemp[2]) {
     min = argMin
   }
-
+  
   if max < min {
     max = 5
     min = 0
-    print("Command arguments invalid. Max cannot be lower than min")
+    print("Command arguments invalid. Max cannot be lower than min.")
     print("Resetting max and min to default values: max = 5 and min = 0")
   }
+} else if argc == 2{
+  print("Command arguments invalid. Both Max and Min needs to be set, or none.")
+  print("Resetting max and min to default values: max = 5 and min = 0")
 }
+
+// Semaphores
+var sem1: SemaModule = SemaModule(value: 1)
+var sem2: SemaModule = SemaModule(value: min+1)
+var sem3: SemaModule = SemaModule(value: max)
+
+// Constructing the structs stored values
+var structArgs: InputStruct = InputStruct(&rand, &sem1, &sem2, &sem3, &numberBuffer, &min, &max, &numbersToPrint, &exitFlag)
+
+var pt: pthread_t?
+
+// Creating a new thread, passing in the address of the struct
+var s: Int32 = pthread_create(&pt, nil, repeatFunc, &structArgs)
 
 while(!exitFlag) {
   print(":: Enter a number>>")
   
   // Reading in the input
   if let stdin = readLine() {
-    
-    // components.separatedBy(: _) returns a String array
-    var temp = stdin.components(separatedBy: " ")
-    
+
     // If input is exit then quit the program
-    if (temp[0] == "exit") {
+    if (stdin == "exit") {
       exitFlag = true
       sem1.vacate()
       sem3.vacate()
@@ -155,25 +158,26 @@ while(!exitFlag) {
       // and parse into an Integer and then append that Integer
       // to the commandLineInput Integer array
       
-      for index in temp {
+      if let num = Int(stdin) {
+        numbersToPrint = num
         
-        if let num = Int(index) {
-          
-          commandLineInput.append(num)
-          
-        } else {
-          
-          // If there is a element in the temp String array that
-          // can not be parsed into an Integer then that is an invalid
-          // input and the user is asked to re-enter the number
-          
-          // A flag incorrectInput is set to true, signaling the for loop
-          // not to process the input.
-          
-          print("Error: Incorrect input.")
+        if numbersToPrint < 0 {
+          print("Less than zero values not allowed.")
           incorrectInput = true
         }
-      }
+      } else {
+        
+        // If there is a element in the temp String array that
+        // can not be parsed into an Integer then that is an invalid
+        // input and the user is asked to re-enter the number
+        
+        // A flag incorrectInput is set to true, signaling the for loop
+        // not to process the input.
+        
+        print("Error: Incorrect input.")
+        incorrectInput = true
+        
+        }
       
       // This is where the program prints out the random numbers.
       // First it checks if the flag incorrectInput is set to false then it
@@ -181,7 +185,7 @@ while(!exitFlag) {
       
       if(!incorrectInput) {
         
-        for index in 0..<commandLineInput[0] {
+        for index in 0..<numbersToPrint {
           sem2.procure()
           sem1.procure()
           randomNumber = rand.get_buffer(strukkt: &structArgs)
