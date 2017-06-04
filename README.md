@@ -5,7 +5,8 @@ Third year course at Griffith University - Bachelor of IT
 
 ### Milestone 1:
 ```
- The objective of this part is to explore simple thread synchronisation using mutexes (simple locks) by implementing a program (in C, C++, or Swift) called sync that creates a child thread, reads (in the parent thread) a line of input from the user, and sends that line to the child thread for printing (to stdout). The parent thread should then wait for the user to hit return (or enter), then notify the child thread to exit. The parent thread should wait for the child to exit, then print "child thread is gone" and also exit.
+ The objective of this part is to explore simple thread synchronisation using mutexes 
+ by implementing a program that creates a child thread, reads (in the parent thread) a line of input from the user, and sends that line to the child thread for printing (to stdout). The parent thread should then wait for the user to hit return (or enter), then notify the child thread to exit. The parent thread should wait for the child to exit, then print "child thread is gone" and also exit.
 ```
 ### Milestone 2:
 ```
